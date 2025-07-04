@@ -3,6 +3,8 @@ import numpy as np
 from sentence_transformers import SentenceTransformer, util
 import openai
 import os
+from dotenv import load_dotenv
+load_dotenv()
 
 class QAEngine:
     def __init__(self, json_path, threshold=0.75):
