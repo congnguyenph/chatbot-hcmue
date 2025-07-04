@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from qa_engine import QAEngine
 from dotenv import load_dotenv
@@ -8,11 +8,11 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app)
 
-qa_engine = QAEngine("data/qa_ctsv.json")
+qa_engine = QAEngine("data/qa-ctsv.json")
 
 @app.route("/")
-def home():
-    return "✅ Chatbot HCMUE is running!"
+def index():
+    return render_template("messenger_chat.html")
 
 @app.route("/chat", methods=["POST"])
 def chat():

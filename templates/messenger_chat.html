@@ -1,0 +1,266 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chatbot HCMUE</title>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body {
+      font-family: roboto, sans-serif;
+      background-color: #f1f1f1;
+      margin: 0;
+    }
+    .chat-container {
+      max-width: 600px;
+      margin: 20px auto;
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      height: 90vh;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .chat-header {
+      background: #124874;
+      color: white;
+      padding: 15px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .chat-header img {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+    }
+    .chat-messages {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+    }
+    .message {
+      margin: 15px 0;
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+    }
+    .message.bot {
+      flex-direction: row;
+    }
+    .message.user {
+      flex-direction: row-reverse;
+      text-align: right;
+    }
+    .message .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      align-self: flex-end;
+    }
+    .bubble {
+      max-width: 75%;
+      position: relative;
+    }
+    .name {
+      font-size: 13px;
+      font-weight: bold;
+      margin-bottom: 3px;
+      color: #333;
+    }
+    .content {
+      background: #eee;
+      padding: 10px;
+      border-radius: 10px;
+    }
+    .bot .content {
+      background: #e0f0ff;
+    }
+    .user .content {
+      background: #d0f5d0;
+    }
+    .tools {
+      margin-top: 5px;
+      font-size: 14px;
+      color: #888;
+      display: flex;
+      gap: 10px;
+    }
+    .tools span {
+      cursor: pointer;
+    }
+    .chat-input {
+      display: flex;
+      border-top: 1px solid #ccc;
+    }
+    .chat-input input {
+      flex: 1;
+      padding: 15px;
+      border: none;
+      font-size: 16px;
+      outline: none;
+    }
+    .chat-input button {
+      padding: 0 20px;
+      font-size: 20px;
+      background: #124874;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    .tools {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .tool-btn {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+      color: #124874;
+      transition: color 0.2s;
+    }
+
+    .tool-btn:hover {
+      color: #000;
+    }
+
+  </style>
+</head>
+<body>
+<div class="chat-container">
+  <div class="chat-header">
+    <img src="https://cdn-icons-png.flaticon.com/512/4712/4712109.png" alt="Bot Avatar"/>
+    Chatbot HCMUE – Công tác sinh viên
+  </div>
+  <div class="chat-messages" id="chat"></div>
+  <div class="chat-input">
+    <input id="userInput" type="text" placeholder="Nhập câu hỏi..." />
+    <button onclick="sendMessage()" id="sendBtn" title="Gửi">
+      <i data-lucide="send"></i>
+    </button>
+</div>
+
+  </div>
+</div>
+
+<script>
+  const chat = document.getElementById("chat");
+  const userInput = document.getElementById("userInput");
+
+  window.onload = () => {
+    addMessage("Chào bạn! Mình là Chatbot HCMUE. Bạn cần hỏi gì về công tác sinh viên?", "bot");
+  }
+
+  userInput.addEventListener("keypress", function(e) {
+    if (e.key === "Enter") {
+      sendMessage();
+    }
+  });
+
+  function addMessage(text, sender = "bot", tools = false, retryHandler = null) {
+    const message = document.createElement("div");
+    message.classList.add("message", sender);
+
+    const avatar = document.createElement("img");
+    avatar.className = "avatar";
+    avatar.src = sender === "bot"
+      ? "https://cdn-icons-png.flaticon.com/512/4712/4712109.png"
+      : "https://cdn-icons-png.flaticon.com/512/1077/1077114.png";
+
+    const bubble = document.createElement("div");
+    bubble.className = "bubble";
+
+    const name = document.createElement("div");
+    name.className = "name";
+    name.textContent = sender === "bot" ? "Chatbot HCMUE" : "User";
+
+    const content = document.createElement("div");
+    content.className = "content";
+    content.textContent = text;
+
+    bubble.appendChild(name);
+    bubble.appendChild(content);
+
+   if (tools) {
+    const toolRow = document.createElement("div");
+    toolRow.className = "tools";
+
+    // Retry button
+    if (retryHandler) {
+      const retryBtn = document.createElement("span");
+      retryBtn.className = "tool-btn";
+      retryBtn.setAttribute("data-lucide", "rotate-ccw");
+      retryBtn.title = "Thử lại";
+      retryBtn.onclick = retryHandler;
+      toolRow.appendChild(retryBtn);
+    }
+
+    // Copy button
+    const copyBtn = document.createElement("span");
+    copyBtn.className = "tool-btn";
+    copyBtn.setAttribute("data-lucide", "copy");
+    copyBtn.title = "Sao chép";
+    copyBtn.onclick = () => {
+      navigator.clipboard.writeText(text);
+      copyBtn.setAttribute("data-lucide", "check");
+      copyBtn.title = "Đã sao chép";
+      lucide.createIcons(); // Cập nhật icon
+      setTimeout(() => {
+        copyBtn.setAttribute("data-lucide", "copy");
+        copyBtn.title = "Sao chép";
+        lucide.createIcons();
+      }, 2000);
+    };
+
+    toolRow.appendChild(copyBtn);
+    bubble.appendChild(toolRow);
+    lucide.createIcons(); // Khởi tạo icon trong toolRow
+  }
+
+
+    message.appendChild(avatar);
+    message.appendChild(bubble);
+    chat.appendChild(message);
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  async function sendMessage() {
+    const text = userInput.value.trim();
+    if (!text) return;
+    addMessage(text, "user");
+    userInput.value = "";
+
+    const retry = () => {
+      //addMessage("Đang xử lý lại...", "bot");
+      setTimeout(() => askBackend(text), 500);
+    };
+
+    askBackend(text, retry);
+  }
+
+  async function askBackend(text, retryHandler = null) {
+    try {
+      const response = await fetch("/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: text })
+      });
+      const data = await response.json();
+      addMessage(data.answer || "❌ Không có phản hồi.", "bot", true);
+    } catch (err) {
+      addMessage("❌ Lỗi kết nối đến máy chủ.", "bot", true, retryHandler);
+    }
+  }
+</script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+  lucide.createIcons();
+</script>
+
+</body>
+</html>
