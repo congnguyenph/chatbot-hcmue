@@ -13,7 +13,7 @@ from sentence_transformers import SentenceTransformer, util
 load_dotenv()
 
 class QAEngine:
-    def __init__(self, json_path, threshold=0.85, model="deepseek/deepseek-r1-0528:free"):
+    def __init__(self, json_path, threshold=0.85, model="deepseek/deepseek-r1:free"):
         self.api_key = os.getenv("OPENROUTER_API_KEY")
         if not self.api_key:
             raise ValueError("❌ Không tìm thấy OPENROUTER_API_KEY trong biến môi trường.")
