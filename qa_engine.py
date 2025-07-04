@@ -1,7 +1,7 @@
 import json
 import numpy as np
 from sentence_transformers import SentenceTransformer, util
-import openai
+from openai import OpenAI
 import os
 from dotenv import load_dotenv
 load_dotenv()
@@ -23,7 +23,6 @@ class QAEngine:
     def get_answer(self, user_question, level=None):
         user_embedding = self.model.encode(user_question, convert_to_tensor=True)
 
-        # lọc theo level nếu có
         mask = [True] * len(self.questions)
         if level:
             level = level.lower()
@@ -35,7 +34,6 @@ class QAEngine:
 
         if len(filtered_embeddings) == 0:
             return self.ask_gpt(user_question, level)
-
 
         cosine_scores = util.cos_sim(user_embedding, filtered_embeddings)[0]
         top_idx = int(np.argmax(cosine_scores))
@@ -51,14 +49,15 @@ class QAEngine:
         if not api_key:
             return "❌ Không có API KEY GPT (OpenAI)."
 
-        openai.api_key = api_key
+        client = OpenAI(api_key=api_key)
+
         try:
             prompt = "Bạn là trợ lý ảo hỗ trợ sinh viên Trường Đại học Sư phạm TP.HCM. "
             if level:
                 prompt += f"Hãy trả lời cho hệ {level}. "
             prompt += f"Câu hỏi: {question}"
 
-            response = openai.ChatCompletion.create(
+            response = client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
                     {"role": "system", "content": "Trả lời bằng tiếng Việt, ngắn gọn, chính xác."},

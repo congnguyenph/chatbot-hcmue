@@ -8,7 +8,7 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app)
 
-qa_engine = QAEngine("data/qa-ctsv.json")
+qa_engine = QAEngine("data/qa_ctsv.json")
 
 @app.route("/")
 def home():
