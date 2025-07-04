@@ -1,9 +1,0 @@
-services:
-  - type: web
-    name: chatbot-hcmue
-    env: pythonVersion: 3.11.8
-    buildCommand: pip install -r requirements.txt
-    startCommand: python app.py
-    envVars:
-      - key: DEEPSEEK_API_KEY
-        sync: false
