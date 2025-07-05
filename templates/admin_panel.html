@@ -1,0 +1,262 @@
+<!-- templates/admin_panel.html -->
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trang Quản trị Chatbot HCMUE</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body {
+      font-family: roboto, sans-serif;
+      background-color: #f9f9f9;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: #124874;
+      color: white;
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .header .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .header .logo img {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+    }
+    .logout {
+      color: white;
+      cursor: pointer;
+      text-decoration: underline;
+      font-size: 14px;
+    }
+    .main {
+      display: flex;
+      height: calc(100vh - 60px);
+    }
+    .sidebar {
+      width: 240px;
+      background-color: #ffffff;
+      border-right: 1px solid #ddd;
+      padding: 24px 16px;
+    }
+    .sidebar button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      margin: 10px 0;
+      padding: 12px 16px;
+      background-color: #124874;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 6px;
+      font-size: 15px;
+      transition: background 0.3s;
+    }
+    .sidebar button:hover {
+      background-color: #0e3a5f;
+    }
+    .content {
+      flex: 1;
+      padding: 32px;
+      overflow-y: auto;
+      background-color: #f0f4f8;
+    }
+    .hidden { display: none; }
+    h2 {
+      color: #124874;
+      margin-top: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 20px;
+    }
+    input, button, select {
+      padding: 10px;
+      margin: 10px 0;
+      width: 100%;
+      box-sizing: border-box;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      font-size: 15px;
+    }
+    button {
+      background-color: #124874;
+      color: white;
+      border: none;
+    }
+    button:hover {
+      background-color: #0e3a5f;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      vertical-align: top;
+    }
+    th {
+      background: #eeeeee;
+    }
+    .stats-info {
+      margin: 10px 0;
+      font-weight: bold;
+    }
+    .login-box {
+      max-width: 380px;
+      background: white;
+      margin: 60px auto;
+      padding: 40px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.08);
+    }
+    .login-box h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .chart-container {
+      max-width: 640px;
+      margin: 30px auto 0;
+      background: white;
+      padding: 16px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+    ul#availableDocs, ul#docList {
+      list-style-type: none;
+      padding-left: 0;
+    }
+    ul#availableDocs li, ul#docList li {
+      background: white;
+      padding: 10px 16px;
+      margin-bottom: 8px;
+      border-radius: 6px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">
+      <img src="https://scontent.fsgn17-1.fna.fbcdn.net/v/t39.30808-6/516590359_591052720728116_2440438233451297952_n.jpg?_nc_cat=109&ccb=1-7&_nc_sid=127cfc&_nc_ohc=eEbHxGMiAtEQ7kNvwEU6HDE&_nc_oc=AdkIygM9ebGz_4j-nv65-SE3nFrNEFf3TRKRM7YIGTUCe8tpJcEmvXa7K95u_WSlw5BKNaCLhwpVdf9FOVG4Rrlb&_nc_zt=23&_nc_ht=scontent.fsgn17-1.fna&_nc_gid=7O-fhLd0NpDSn7e5pZMFEw&oh=00_AfSq55p0IOniBYbC-s8b5zcMAPwfryWMK6LruBDKlYCUIQ&oe=686E99BD" alt="Admin">
+      <span>TRANG QUẢN TRỊ CHATBOT HCMUE</span>
+    </div>
+    <div class="logout hidden" id="logoutBtn">Đăng xuất</div>
+  </div>
+
+  <div class="main">
+    <div class="sidebar hidden" id="sidebar">
+      <button onclick="showTab('upload')"><i data-lucide="file-up"></i>DANH MỤC TÀI LIỆU</button>
+      <button onclick="showTab('stats')"><i data-lucide="bar-chart-3"></i>THỐNG KÊ</button>
+    </div>
+
+    <div class="content">
+      <div id="loginForm" class="login-box">
+        <h2><i data-lucide="lock"></i> ĐĂNG NHẬP</h2>
+        <label for="username">Tài khoản</label>
+        <input type="text" id="username" placeholder="Tên tài khoản">
+        <label for="password">Mật khẩu</label>
+        <input type="password" id="password" placeholder="Mật khẩu" onkeydown="if(event.key==='Enter') login()">
+        <button onclick="login()"><i data-lucide="log-in"></i> Đăng nhập</button>
+        <div id="loginError" style="color: red;"></div>
+      </div>
+
+      <div id="uploadTab" class="hidden">
+        <h2><i data-lucide="file-up"></i> Upload tài liệu PDF</h2>
+        <input type="file" id="pdfFile" accept="application/pdf">
+        <button onclick="uploadPDF()"><i data-lucide="upload-cloud"></i>Tải lên</button>
+        <div id="uploadResult"></div>
+        <h2 style="margin-top:40px"><i data-lucide="folder-open"></i> Danh sách tài liệu đã xử lý</h2>
+        <ul id="docList"></ul>
+        <h2 style="margin-top:40px"><i data-lucide="file"></i> Tài liệu có sẵn trong hệ thống</h2>
+        <ul id="availableDocs"></ul>
+      </div>
+
+      <div id="statsTab" class="hidden">
+        <h2><i data-lucide="bar-chart-3"></i> Thống kê & Tìm kiếm câu hỏi</h2>
+        <div class="stats-info" id="statsSummary"></div>
+        <input type="text" id="searchInput" placeholder="🔍 Tìm kiếm theo từ khóa...">
+        <div class="stats-info" id="searchCount"></div>
+        <button onclick="downloadCSV()"><i data-lucide="download"></i> Tải xuống CSV</button>
+        <div class="chart-container">
+          <h3 style="text-align:center;color:#124874;margin-bottom:16px">Biểu đồ số lượng câu hỏi theo ngày</h3>
+          <canvas id="chartCanvas"></canvas>
+        </div>
+        <table>
+          <thead><tr><th>Thời gian</th><th>Câu hỏi</th><th>Trả lời</th><th>Xóa</th></tr></thead>
+          <tbody id="logTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    let allLogs = [];
+
+    function login() {
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
+      fetch("/login_api", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+      }).then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            document.getElementById("loginForm").classList.add("hidden");
+            document.getElementById("sidebar").classList.remove("hidden");
+            document.getElementById("logoutBtn").classList.remove("hidden");
+            showTab('upload');
+            loadLogs();
+            loadDocs();
+            loadAvailablePDFs();
+          } else {
+            document.getElementById("loginError").textContent = data.error;
+          }
+        });
+    }
+
+    function showTab(tab) {
+      ['uploadTab', 'statsTab'].forEach(id => {
+        document.getElementById(id).classList.add('hidden');
+      });
+      document.getElementById(tab + 'Tab').classList.remove('hidden');
+      lucide.createIcons();
+      if (tab === 'stats') {
+        document.getElementById("searchInput").focus();
+        document.getElementById("searchInput").dispatchEvent(new Event("input"));
+      }
+    }
+
+    function loadAvailablePDFs() {
+      fetch("/pdf_list")
+        .then(res => res.json())
+        .then(files => {
+          const list = document.getElementById("availableDocs");
+          list.innerHTML = files.length === 0 ? "<li>Không có tài liệu nào.</li>" : files.map(f => `<li>${f}</li>`).join("");
+        });
+    }
+  </script>
+</body>
+</html>

@@ -18,7 +18,12 @@ import logging
 import re
 from cachetools import TTLCache
 
-logging.basicConfig(filename="processing.log", level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    filename="processing.log",
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    encoding='utf-8'
+)
 
 class CustomOCRPDFLoader:
     def __init__(self, file_path: str, language: str = os.getenv("OCR_LANGUAGE", "vie")):

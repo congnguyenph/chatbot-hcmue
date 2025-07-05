@@ -1,11 +1,16 @@
-from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from dotenv import load_dotenv
 from rag_engine import RAGEngine
+import os
+import json
+from datetime import datetime
+from flask import Flask, request, jsonify, render_template, redirect, url_for, session
+from werkzeug.utils import secure_filename
 
 load_dotenv()
 app = Flask(__name__)
 CORS(app)
+app.secret_key = os.getenv("SECRET_KEY", "supersecret")
 
 rag_engine = RAGEngine()
 chat_history = []  # Lưu trữ lịch sử trò chuyện
@@ -20,16 +25,74 @@ def chat():
     question = data.get("question")
     if not question:
         return jsonify({"error": "Missing 'question' field"}), 400
-    
-    # Gọi RAGEngine với lịch sử trò chuyện
+
     answer = rag_engine.get_answer(question, chat_history)
-    
-    # Cập nhật lịch sử trò chuyện
     chat_history.append((question, answer))
-    if len(chat_history) > 10:  # Giới hạn 10 lượt
+    if len(chat_history) > 10:
         chat_history.pop(0)
-    
+
+    chat_entry = {
+        "time": datetime.now().isoformat(timespec='seconds'),
+        "question": question,
+        "answer": answer
+    }
+    with open("chat_logs.json", "a", encoding="utf-8") as f:
+        json.dump(chat_entry, f, ensure_ascii=False)
+        f.write("\n")
+
     return jsonify({"answer": answer, "history": chat_history})
 
+@app.route("/admin_panel")
+def admin_panel():
+    return render_template("admin_panel.html")
+
+@app.route("/login_api", methods=["POST"])
+def login_api():
+    data = request.get_json()
+    if data["username"] == os.getenv("ADMIN_USER") and data["password"] == os.getenv("ADMIN_PASS"):
+        session["admin"] = True
+        return jsonify({"success": True})
+    return jsonify({"success": False, "error": "Sai tài khoản hoặc mật khẩu."})
+
+@app.route("/logout")
+def logout():
+    session.pop("admin", None)
+    return redirect("/admin_panel")
+
+@app.route("/upload_pdf", methods=["POST"])
+def upload_pdf():
+    if not session.get("admin"):
+        return jsonify({"error": "Unauthorized"}), 401
+    file = request.files.get("file")
+    if not file or not file.filename.endswith(".pdf"):
+        return jsonify({"error": "Invalid file"}), 400
+    filepath = os.path.join("pdf_documents", secure_filename(file.filename))
+    file.save(filepath)
+    rag_engine.processor._process_single_pdf(file.filename)
+    rag_engine.processor._save_processed_files()
+    return jsonify({"message": "✅ Đã xử lý và cập nhật tài liệu."})
+
+@app.route("/chat_logs")
+def chat_logs():
+    if not session.get("admin"):
+        return jsonify([])
+    try:
+        with open("chat_logs.json", "r", encoding="utf-8") as f:
+            lines = f.readlines()
+        return jsonify([json.loads(line.strip()) for line in lines])
+    except:
+        return jsonify([])
+@app.route("/pdf_list")
+def pdf_list():
+    pdf_folder = "pdf_documents"  # hoặc chỉnh lại nếu bạn dùng đường dẫn khác
+    if not os.path.exists(pdf_folder):
+        return jsonify([])
+
+    files = [f for f in os.listdir(pdf_folder) if f.lower().endswith(".pdf")]
+    return jsonify(files)
+
+
 if __name__ == "__main__":
+    print("🔗 Chatbot đang chạy tại: http://localhost:5000")
+    print("🔗 Trang Quản trị Chatbot đang chạy tại: http://localhost:5000/admin_panel")
     app.run(debug=False, host="0.0.0.0", port=5000)

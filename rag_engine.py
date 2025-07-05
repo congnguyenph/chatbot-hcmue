@@ -4,13 +4,18 @@ from pdf_processor_adaptive import PDFProcessor
 import requests
 import logging
 
-logging.basicConfig(filename="query.log", level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    filename="processing.log",
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    encoding='utf-8'
+)
 
 class RAGEngine:
     def __init__(self):
         load_dotenv()
         self.processor = PDFProcessor()
-        self.processor.process_pdfs()
+        #self.processor.process_pdfs()
         self.api_key = os.getenv("GEMINI_API_KEY")
         self.model = os.getenv("MODEL_NAME", "models/gemini-2.5-pro")
         if not self.api_key:

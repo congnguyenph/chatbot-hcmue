@@ -24,8 +24,7 @@ cd chatbot-hcmue
 
 2. Tạo môi trường ảo
 python -m venv venv
-.\venv\Scripts\activate  # Windows
-source venv/bin/activate  # Linux/Mac
+venv\Scripts\activate
 
 3. Cài đặt thư viện
 pip install -r requirements.txt
