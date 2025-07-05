@@ -59,18 +59,19 @@ def logout():
     session.pop("admin", None)
     return redirect("/admin_panel")
 
-@app.route("/upload_pdf", methods=["POST"])
+UPLOAD_FOLDER = './pdf_documents'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+@app.route('/upload_pdf', methods=['POST'])
 def upload_pdf():
-    if not session.get("admin"):
-        return jsonify({"error": "Unauthorized"}), 401
-    file = request.files.get("file")
-    if not file or not file.filename.endswith(".pdf"):
-        return jsonify({"error": "Invalid file"}), 400
-    filepath = os.path.join("pdf_documents", secure_filename(file.filename))
-    file.save(filepath)
-    rag_engine.processor._process_single_pdf(file.filename)
-    rag_engine.processor._save_processed_files()
-    return jsonify({"message": "✅ Đã xử lý và cập nhật tài liệu."})
+    file = request.files['pdf_file']
+    if file and file.filename.endswith('.pdf'):
+        filename = secure_filename(file.filename)
+        save_path = os.path.join(UPLOAD_FOLDER, filename)
+        file.save(save_path)
+        # xử lý tiếp nếu cần
+        return jsonify({"message": f"Đã lưu vào {save_path}"}), 200
+    return jsonify({"message": "File không hợp lệ"}), 400
 
 @app.route("/chat_logs")
 def chat_logs():

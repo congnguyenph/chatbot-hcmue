@@ -1,3 +1,4 @@
+
 <!-- templates/admin_panel.html -->
 <!DOCTYPE html>
 <html lang="vi">
@@ -157,10 +158,10 @@
 <body>
   <div class="header">
     <div class="logo">
-      <img src="https://scontent.fsgn17-1.fna.fbcdn.net/v/t39.30808-6/516590359_591052720728116_2440438233451297952_n.jpg?_nc_cat=109&ccb=1-7&_nc_sid=127cfc&_nc_ohc=eEbHxGMiAtEQ7kNvwEU6HDE&_nc_oc=AdkIygM9ebGz_4j-nv65-SE3nFrNEFf3TRKRM7YIGTUCe8tpJcEmvXa7K95u_WSlw5BKNaCLhwpVdf9FOVG4Rrlb&_nc_zt=23&_nc_ht=scontent.fsgn17-1.fna&_nc_gid=7O-fhLd0NpDSn7e5pZMFEw&oh=00_AfSq55p0IOniBYbC-s8b5zcMAPwfryWMK6LruBDKlYCUIQ&oe=686E99BD" alt="Admin">
+      <img src="https://via.placeholder.com/36" alt="Admin">
       <span>TRANG QUẢN TRỊ CHATBOT HCMUE</span>
     </div>
-    <div class="logout hidden" id="logoutBtn">Đăng xuất</div>
+    <div class="logout hidden" id="logoutBtn" onclick="location.reload()">Đăng xuất</div>
   </div>
 
   <div class="main">
@@ -249,6 +250,26 @@
       }
     }
 
+    function uploadPDF() {
+      const fileInput = document.getElementById("pdfFile");
+      const file = fileInput.files[0];
+      if (!file) return alert("Vui lòng chọn file PDF.");
+
+      const formData = new FormData();
+      formData.append("pdf_file", file);
+
+      fetch("/upload_pdf", {
+        method: "POST",
+        body: formData
+      })
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById("uploadResult").innerText = data.message || "Đã xử lý xong.";
+        loadDocs();
+        loadAvailablePDFs();
+      });
+    }
+
     function loadAvailablePDFs() {
       fetch("/pdf_list")
         .then(res => res.json())
@@ -257,6 +278,105 @@
           list.innerHTML = files.length === 0 ? "<li>Không có tài liệu nào.</li>" : files.map(f => `<li>${f}</li>`).join("");
         });
     }
+
+    function loadDocs() {
+      fetch("/processed_list")
+        .then(res => res.json())
+        .then(files => {
+          const list = document.getElementById("docList");
+          list.innerHTML = files.length === 0 ? "<li>Không có tài liệu nào.</li>" : files.map(f => `<li>${f}</li>`).join("");
+        });
+    }
+
+    function loadLogs() {
+  fetch("/chat_logs")
+    .then(res => res.json())
+    .then(logs => {
+      allLogs = logs;
+      renderLogs(logs);
+      updateChart(logs); // 👈 thêm dòng này
+    });
+}
+
+
+    function renderLogs(logs) {
+      const tbody = document.getElementById("logTable");
+      tbody.innerHTML = logs.map(log => `
+        <tr>
+          <td>${log.time}</td>
+          <td>${log.question}</td>
+          <td>${log.answer}</td>
+          <td><button onclick="deleteLog('${log.time}')">🗑️</button></td>
+        </tr>
+      `).join("");
+    }
+
+    function deleteLog(time) {
+      if (!confirm("Bạn có chắc muốn xoá log này?")) return;
+      fetch("/delete_log", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ time })
+      }).then(() => {
+        loadLogs();
+      });
+    }
+    function updateChart(logs) {
+  const countByDate = {};
+  logs.forEach(log => {
+    const date = log.time.split(" ")[0]; // lấy phần YYYY-MM-DD
+    countByDate[date] = (countByDate[date] || 0) + 1;
+  });
+
+  const labels = Object.keys(countByDate).sort();
+  const data = labels.map(date => countByDate[date]);
+
+  const ctx = document.getElementById('chartCanvas').getContext('2d');
+  if (window.logChart) window.logChart.destroy(); // reset chart cũ nếu có
+  window.logChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Số câu hỏi',
+        data,
+        borderWidth: 1
+      }]
+    },
+    options: {
+      scales: {
+        y: { beginAtZero: true }
+      }
+    }
+  });
+}
+
+
+    function downloadCSV() {
+      const rows = [["Thời gian", "Câu hỏi", "Trả lời"]];
+      allLogs.forEach(log => {
+        rows.push([log.time, log.question, log.answer]);
+      });
+
+      const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", "chatbot_logs.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    document.getElementById("searchInput").addEventListener("input", function () {
+      const keyword = this.value.toLowerCase();
+      const filtered = allLogs.filter(log =>
+        log.question.toLowerCase().includes(keyword) ||
+        log.answer.toLowerCase().includes(keyword)
+      );
+      document.getElementById("searchCount").textContent = `Tìm thấy ${filtered.length} kết quả`;
+      renderLogs(filtered);
+    });
   </script>
 </body>
 </html>
