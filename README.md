@@ -1,22 +1,23 @@
 Chatbot HCMUE
 Hệ thống chatbot hỗ trợ sinh viên Trường Đại học Sư phạm TP.HCM, trả lời các thắc mắc liên quan đến công tác sinh viên, học phí, học bổng, rèn luyện, chính sách và quy định nhà trường dựa trên tài liệu PDF chính thức.
-Tính năng
 
-Xử lý cả PDF dạng text và PDF quét (OCR).
-Tích hợp tìm kiếm ngữ nghĩa với mô hình embeddings tiếng Việt (thanhtantran/Vietnamese_Embedding_v2).
-Sử dụng API Gemini để tạo câu trả lời tự nhiên.
-Giao diện web thân thiện với lịch sử trò chuyện.
-Logging chi tiết để theo dõi xử lý PDF và truy vấn người dùng.
+**Tính năng**
 
-Yêu cầu hệ thống
+- Xử lý cả PDF dạng text và PDF quét (OCR).
+- Tích hợp tìm kiếm ngữ nghĩa với mô hình embeddings tiếng Việt (thanhtantran/Vietnamese_Embedding_v2).
+- Sử dụng API Gemini để tạo câu trả lời tự nhiên.
+- Giao diện web thân thiện với lịch sử trò chuyện.
+- Logging chi tiết để theo dõi xử lý PDF và truy vấn người dùng.
 
-Python: 3.8 hoặc cao hơn
-Tesseract OCR: Cài đặt để hỗ trợ xử lý PDF quét (Hướng dẫn cài đặt)
-Poppler: Yêu cầu cho pdf2image (Hướng dẫn cài đặt)
-Hệ điều hành: Windows, Linux, hoặc macOS
-Dung lượng: Tối thiểu 2GB RAM, 5GB dung lượng trống cho môi trường ảo và cơ sở dữ liệu Chroma.
+**Yêu cầu hệ thống**
 
-Cài đặt
+- Python: 3.8 hoặc cao hơn
+- Tesseract OCR: Cài đặt để hỗ trợ xử lý PDF quét (Hướng dẫn cài đặt)
+- Poppler: Yêu cầu cho pdf2image (Hướng dẫn cài đặt)
+- Hệ điều hành: Windows, Linux, hoặc macOS
+- Dung lượng: Tối thiểu 2GB RAM, 5GB dung lượng trống cho môi trường ảo và cơ sở dữ liệu Chroma.
+
+**Cài đặt**
 1. Giải nén và vào thư mục
 unzip chatbot-hcmue.zip
 cd chatbot-hcmue
@@ -56,7 +57,7 @@ python app.py
 
 Mở trình duyệt và truy cập http://localhost:5000 để sử dụng chatbot.
 
-Xử lý lỗi
+**Xử lý lỗi**
 
 Lỗi "GEMINI_API_KEY không được tìm thấy": Kiểm tra file .env và đảm bảo key hợp lệ.
 Lỗi xử lý PDF: Xem log trong processing.log hoặc query.log để biết chi tiết.
@@ -64,7 +65,7 @@ Lỗi cài đặt thư viện: Chạy lại pip install -r requirements.txt ho�
 Lỗi Tesseract/Poppler: Cài đặt Tesseract và Poppler đúng cách, đảm bảo chúng được thêm vào PATH hệ thống.
 Lỗi truy cập localhost: Kiểm tra xem cổng 5000 có đang được sử dụng bởi ứng dụng khác không.
 
-Cấu trúc thư mục
+**Cấu trúc thư mục**
 
 pdf_documents/: Thư mục chứa file PDF đầu vào.
 db/: Cơ sở dữ liệu Chroma lưu trữ embeddings.
@@ -79,7 +80,7 @@ pdf_processor_adaptive.py: Lớp xử lý PDF và tạo embeddings.
 requirements.txt: Danh sách thư viện cần cài đặt.
 run_chatbot.bat: Script chạy ứng dụng trên Windows.
 
-Ghi chú
+**Ghi chú**
 
 Đảm bảo thư mục pdf_documents/ và db/ có quyền ghi.
 Hệ thống hỗ trợ lịch sử trò chuyện (tối đa 10 lượt).
