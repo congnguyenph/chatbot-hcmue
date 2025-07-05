@@ -1,0 +1,9 @@
+# .gitignore
+.env
+venv/
+__pycache__/
+*.pyc
+db/
+pdf_documents/
+processed_files.json
+processing.log

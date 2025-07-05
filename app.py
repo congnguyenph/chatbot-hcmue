@@ -1,14 +1,14 @@
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
-from qa_engine import QAEngine
 from dotenv import load_dotenv
-import os
+from rag_engine import RAGEngine
 
 load_dotenv()
 app = Flask(__name__)
 CORS(app)
 
-qa_engine = QAEngine("data/qa-ctsv.json")
+rag_engine = RAGEngine()
+chat_history = []  # Lưu trữ lịch sử trò chuyện
 
 @app.route("/")
 def index():
@@ -18,12 +18,18 @@ def index():
 def chat():
     data = request.get_json()
     question = data.get("question")
-    level = data.get("level")
     if not question:
         return jsonify({"error": "Missing 'question' field"}), 400
-    answer = qa_engine.get_answer(question, level)
-    return jsonify({"answer": answer})
+    
+    # Gọi RAGEngine với lịch sử trò chuyện
+    answer = rag_engine.get_answer(question, chat_history)
+    
+    # Cập nhật lịch sử trò chuyện
+    chat_history.append((question, answer))
+    if len(chat_history) > 10:  # Giới hạn 10 lượt
+        chat_history.pop(0)
+    
+    return jsonify({"answer": answer, "history": chat_history})
 
 if __name__ == "__main__":
-    app.run(debug=False)
-
+    app.run(debug=False, host="0.0.0.0", port=5000)

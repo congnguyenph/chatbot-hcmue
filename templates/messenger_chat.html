@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -12,16 +11,35 @@
       background-color: #f1f1f1;
       margin: 0;
     }
+    #chat-popup-btn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #124874;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 56px;
+      height: 56px;
+      font-size: 24px;
+      cursor: pointer;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      z-index: 999;
+    }
     .chat-container {
-      max-width: 600px;
-      margin: 20px auto;
+      position: fixed;
+      bottom: 80px;
+      right: 20px;
+      width: 350px;
+      max-width: 100%;
       background: white;
       border-radius: 8px;
       overflow: hidden;
-      display: flex;
+      display: none;
       flex-direction: column;
-      height: 90vh;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      height: 500px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      z-index: 1000;
     }
     .chat-header {
       background: #124874;
@@ -111,12 +129,6 @@
       border: none;
       cursor: pointer;
     }
-    .tools {
-      display: flex;
-      gap: 8px;
-      margin-top: 8px;
-    }
-
     .tool-btn {
       width: 20px;
       height: 20px;
@@ -124,17 +136,16 @@
       color: #124874;
       transition: color 0.2s;
     }
-
     .tool-btn:hover {
       color: #000;
     }
-
   </style>
 </head>
 <body>
-<div class="chat-container">
+<button id="chat-popup-btn" title="Chat với HCMUE"><i data-lucide="message-circle"></i></button>
+<div class="chat-container" id="chatPopup">
   <div class="chat-header">
-    <img src="https://cdn-icons-png.flaticon.com/512/4712/4712109.png" alt="Bot Avatar"/>
+    <img src="https://scontent.fsgn17-1.fna.fbcdn.net/v/t39.30808-6/516590359_591052720728116_2440438233451297952_n.jpg?_nc_cat=109&ccb=1-7&_nc_sid=127cfc&_nc_ohc=eEbHxGMiAtEQ7kNvwEU6HDE&_nc_oc=AdkIygM9ebGz_4j-nv65-SE3nFrNEFf3TRKRM7YIGTUCe8tpJcEmvXa7K95u_WSlw5BKNaCLhwpVdf9FOVG4Rrlb&_nc_zt=23&_nc_ht=scontent.fsgn17-1.fna&_nc_gid=7O-fhLd0NpDSn7e5pZMFEw&oh=00_AfSq55p0IOniBYbC-s8b5zcMAPwfryWMK6LruBDKlYCUIQ&oe=686E99BD" alt="Bot Avatar"/>
     Chatbot HCMUE – Công tác sinh viên
   </div>
   <div class="chat-messages" id="chat"></div>
@@ -143,34 +154,47 @@
     <button onclick="sendMessage()" id="sendBtn" title="Gửi">
       <i data-lucide="send"></i>
     </button>
-</div>
-
   </div>
 </div>
 
 <script>
   const chat = document.getElementById("chat");
   const userInput = document.getElementById("userInput");
+  const chatPopup = document.getElementById("chatPopup");
+  const popupBtn = document.getElementById("chat-popup-btn");
+  let chatHistory = []; // Lưu trữ lịch sử trò chuyện cục bộ
 
+  // Khởi tạo biểu tượng Lucide
+  lucide.createIcons();
+
+  // Bật/tắt popup chat
+  popupBtn.addEventListener("click", () => {
+    chatPopup.style.display = chatPopup.style.display === "flex" ? "none" : "flex";
+  });
+
+  // Tin nhắn chào mừng khi tải trang
   window.onload = () => {
     addMessage("Chào bạn! Mình là Chatbot HCMUE. Bạn cần hỏi gì về công tác sinh viên?", "bot");
-  }
+    loadChatHistory(); // Tải lịch sử từ server
+  };
 
+  // Gửi câu hỏi khi nhấn Enter
   userInput.addEventListener("keypress", function(e) {
     if (e.key === "Enter") {
       sendMessage();
     }
   });
 
+  // Hàm hiển thị tin nhắn
   function addMessage(text, sender = "bot", tools = false, retryHandler = null) {
     const message = document.createElement("div");
     message.classList.add("message", sender);
 
     const avatar = document.createElement("img");
     avatar.className = "avatar";
-    avatar.src = sender === "bot"
-      ? "https://cdn-icons-png.flaticon.com/512/4712/4712109.png"
-      : "https://cdn-icons-png.flaticon.com/512/1077/1077114.png";
+      avatar.src = sender === "bot"
+      ? "https://scontent.fsgn17-1.fna.fbcdn.net/v/t39.30808-6/516590359_591052720728116_2440438233451297952_n.jpg?_nc_cat=109&ccb=1-7&_nc_sid=127cfc&_nc_ohc=eEbHxGMiAtEQ7kNvwEU6HDE&_nc_oc=AdkIygM9ebGz_4j-nv65-SE3nFrNEFf3TRKRM7YIGTUCe8tpJcEmvXa7K95u_WSlw5BKNaCLhwpVdf9FOVG4Rrlb&_nc_zt=23&_nc_ht=scontent.fsgn17-1.fna&_nc_gid=7O-fhLd0NpDSn7e5pZMFEw&oh=00_AfSq55p0IOniBYbC-s8b5zcMAPwfryWMK6LruBDKlYCUIQ&oe=686E99BD"
+      : "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
 
     const bubble = document.createElement("div");
     bubble.className = "bubble";
@@ -186,74 +210,114 @@
     bubble.appendChild(name);
     bubble.appendChild(content);
 
-   if (tools) {
-    const toolRow = document.createElement("div");
-    toolRow.className = "tools";
+    if (tools) {
+      const toolRow = document.createElement("div");
+      toolRow.className = "tools";
 
-    // Retry button
-    if (retryHandler) {
-      const retryBtn = document.createElement("span");
-      retryBtn.className = "tool-btn";
-      retryBtn.setAttribute("data-lucide", "rotate-ccw");
-      retryBtn.title = "Thử lại";
-      retryBtn.onclick = retryHandler;
-      toolRow.appendChild(retryBtn);
-    }
+      if (retryHandler) {
+        const retryBtn = document.createElement("span");
+        retryBtn.className = "tool-btn";
+        retryBtn.setAttribute("data-lucide", "rotate-ccw");
+        retryBtn.title = "Thử lại";
+        retryBtn.onclick = retryHandler;
+        toolRow.appendChild(retryBtn);
+      }
 
-    // Copy button
-    const copyBtn = document.createElement("span");
-    copyBtn.className = "tool-btn";
-    copyBtn.setAttribute("data-lucide", "copy");
-    copyBtn.title = "Sao chép";
-    copyBtn.onclick = () => {
-      navigator.clipboard.writeText(text);
-      copyBtn.setAttribute("data-lucide", "check");
-      copyBtn.title = "Đã sao chép";
-      lucide.createIcons(); // Cập nhật icon
-      setTimeout(() => {
-        copyBtn.setAttribute("data-lucide", "copy");
-        copyBtn.title = "Sao chép";
+      const copyBtn = document.createElement("span");
+      copyBtn.className = "tool-btn";
+      copyBtn.setAttribute("data-lucide", "copy");
+      copyBtn.title = "Sao chép";
+      copyBtn.onclick = () => {
+        navigator.clipboard.writeText(text);
+        copyBtn.setAttribute("data-lucide", "check");
+        copyBtn.title = "Đã sao chép";
         lucide.createIcons();
-      }, 2000);
-    };
+        setTimeout(() => {
+          copyBtn.setAttribute("data-lucide", "copy");
+          copyBtn.title = "Sao chép";
+          lucide.createIcons();
+        }, 2000);
+      };
 
-    toolRow.appendChild(copyBtn);
-    bubble.appendChild(toolRow);
-    lucide.createIcons(); // Khởi tạo icon trong toolRow
-  }
-
+      toolRow.appendChild(copyBtn);
+      bubble.appendChild(toolRow);
+    }
 
     message.appendChild(avatar);
     message.appendChild(bubble);
     chat.appendChild(message);
     chat.scrollTop = chat.scrollHeight;
+    lucide.createIcons();
   }
 
+  // Hàm gửi câu hỏi
   async function sendMessage() {
     const text = userInput.value.trim();
     if (!text) return;
     addMessage(text, "user");
     userInput.value = "";
-
+    
+    // Thêm câu hỏi vào lịch sử cục bộ
+    chatHistory.push({ question: text, answer: "Đang xử lý..." });
+    
     const retry = () => {
-      //addMessage("Đang xử lý lại...", "bot");
-      setTimeout(() => askBackend(text), 500);
+      setTimeout(() => askBackend(text, retry), 500);
     };
-
-    askBackend(text, retry);
+    
+    await askBackend(text, retry);
+    renderChatHistory(); // Cập nhật lại giao diện sau khi nhận phản hồi
   }
 
+  // Hàm gửi yêu cầu đến server
   async function askBackend(text, retryHandler = null) {
+  try {
+    const response = await fetch("/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question: text })
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    const data = await response.json();
+    const answer = data.answer || "❌ Không có phản hồi.";
+    chatHistory[chatHistory.length - 1].answer = answer;
+    addMessage(answer, "bot", true, retryHandler);
+    if (data.history) {
+      chatHistory = data.history.map(([q, a]) => ({ question: q, answer: a }));
+    }
+  } catch (err) {
+    console.error("Lỗi chi tiết:", err);
+    chatHistory[chatHistory.length - 1].answer = `❌ Lỗi kết nối: ${err.message}`;
+    addMessage(`❌ Lỗi kết nối: ${err.message}`, "bot", true, retryHandler);
+  }
+}
+
+  // Hàm hiển thị lịch sử trò chuyện
+  function renderChatHistory() {
+    chat.innerHTML = "";
+    chatHistory.forEach(({ question, answer }) => {
+      addMessage(question, "user");
+      addMessage(answer, "bot", answer.startsWith("❌") ? true : false, answer.startsWith("❌") ? () => askBackend(question) : null);
+    });
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  // Hàm tải lịch sử trò chuyện từ server
+  async function loadChatHistory() {
     try {
       const response = await fetch("/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: text })
+        body: JSON.stringify({ question: "" })
       });
       const data = await response.json();
-      addMessage(data.answer || "❌ Không có phản hồi.", "bot", true);
-    } catch (err) {
-      addMessage("❌ Lỗi kết nối đến máy chủ.", "bot", true, retryHandler);
+      if (data.history) {
+        chatHistory = data.history.map(([q, a]) => ({ question: q, answer: a }));
+        renderChatHistory();
+      }
+    } catch (error) {
+      console.error("Không thể tải lịch sử trò chuyện:", error);
     }
   }
 </script>
@@ -261,6 +325,5 @@
 <script>
   lucide.createIcons();
 </script>
-
 </body>
 </html>
