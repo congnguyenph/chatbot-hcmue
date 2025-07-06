@@ -1,8 +1,8 @@
 import os
+import logging
+import requests
 from dotenv import load_dotenv
 from pdf_processor_adaptive import PDFProcessor
-import requests
-import logging
 
 logging.basicConfig(
     filename="processing.log",
@@ -15,11 +15,13 @@ class RAGEngine:
     def __init__(self):
         load_dotenv()
         self.processor = PDFProcessor()
-        #self.processor.process_pdfs()
         self.api_key = os.getenv("GEMINI_API_KEY")
         self.model = os.getenv("MODEL_NAME", "models/gemini-2.5-pro")
         if not self.api_key:
-            raise ValueError("GEMINI_API_KEY không được tìm thấy trong .env")
+            raise ValueError("❌ Không tìm thấy GEMINI_API_KEY trong .env")
+
+        if not self.model.startswith("models/"):
+            raise ValueError("❌ MODEL_NAME không hợp lệ. Ví dụ hợp lệ: models/gemini-pro")
 
     def get_answer(self, question, chat_history=None):
         if not question or len(question.strip()) < 3:
@@ -30,19 +32,17 @@ class RAGEngine:
             results = self.processor.search_similar(question)[:1]
             context = "\n".join([doc.page_content[:800] for doc in results])
 
-            # Ghi log truy vấn
             logging.info(f"Truy vấn: {question}")
-            logging.info(f"Ngữ cảnh: {context[:200]}...")  # Ghi log 200 ký tự đầu của ngữ cảnh
+            logging.info(f"Ngữ cảnh: {context[:200]}...")
 
             if len(context.strip()) < 20:
                 logging.warning(f"Không tìm thấy ngữ cảnh phù hợp cho câu hỏi: {question}")
                 return self._ask_llm(question)
 
-            # Tích hợp chat history nếu có
             history_context = ""
             if chat_history:
                 history_context = "\nLịch sử trò chuyện:\n" + "\n".join(
-                    [f"Q: {q}\nA: {a}" for q, a in chat_history[-3:]]  # Giới hạn 3 lượt trước
+                    [f"Q: {q}\nA: {a}" for q, a in chat_history[-3:]]
                 )
 
             prompt = f"""
@@ -67,32 +67,39 @@ Lưu ý: Không suy đoán hay trả lời dựa trên kiến thức bên ngoài
 
         except Exception as e:
             logging.error(f"Lỗi xử lý câu hỏi '{question}': {str(e)}")
-            return f"❌ Lỗi: {str(e)}"
+            return f"❌ Lỗi hệ thống: {str(e)}"
 
     def _ask_llm(self, prompt):
         try:
             url = f"https://generativelanguage.googleapis.com/v1/{self.model}:generateContent"
-            headers = {
-                "Content-Type": "application/json"
-            }
-            payload = {
-                "contents": [{"parts": [{"text": prompt}]}]
-            }
+            headers = {"Content-Type": "application/json"}
+            payload = {"contents": [{"parts": [{"text": prompt}]}]}
+
             response = requests.post(
                 f"{url}?key={self.api_key}",
                 headers=headers,
                 json=payload
             )
+            logging.info(response)
             if response.status_code == 200:
                 data = response.json()
                 if "candidates" in data and data["candidates"]:
                     answer = data["candidates"][0]["content"]["parts"][0]["text"].strip()
                     logging.info(f"Đáp án từ Gemini: {answer[:200]}...")
                     return answer
-                logging.warning("Không có phản hồi từ Gemini")
+                logging.warning("Không có phản hồi từ Gemini.")
                 return "❌ Không có phản hồi từ Gemini."
-            logging.error(f"API lỗi: {response.status_code} - {response.text}")
-            return f"❌ API lỗi: {response.status_code} - {response.text}"
+
+            # Xử lý lỗi API cụ thể hơn
+            error_info = response.json().get("error", {}).get("message", "Không rõ lỗi.")
+            if response.status_code == 403:
+                return "❌ API Key không hợp lệ hoặc bị từ chối truy cập."
+            elif response.status_code == 400:
+                return f"❌ Lỗi yêu cầu API: {error_info}"
+            else:
+                logging.error(f"API lỗi: {response.status_code} - {response.text}")
+                return f"❌ API lỗi {response.status_code}: {error_info}"
+
         except Exception as e:
             logging.error(f"API lỗi: {str(e)}")
-            return f"❌ API lỗi: {str(e)}"
+            return f"❌ Lỗi khi gọi API Gemini: {str(e)}"
